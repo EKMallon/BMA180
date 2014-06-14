@@ -1,5 +1,7 @@
-// BMA180 accelerometer script for tilt sensing in Cave Pearl Project
+// BMA180 I2C accelerometer script for tilt sensing in Cave Pearl Project
 // First working build for Raw 14 bit readings
+// 2012/06/11 by Edward Mallon
+// still needs to code for calibrating offsets
 
 char foo;  //this is bogus code to fix a software bug in the compiler see: http://forum.arduino.cc/index.php?topic=84412.0
 
@@ -45,14 +47,14 @@ char foo;  //this is bogus code to fix a software bug in the compiler see: http:
 
 #define MODE_config_MASK       B00000011 //section 7.7.3 (only uses 2 bits of this register for configureing the power mode)
 /* AFTER write of mode_config bits in EEPROM, YOU MUST DO a soft RESET*/
-#define MODE_LOW_NOISE         B00  // 0x00 //this is the default value!
+#define MODE_LOW_NOISE         B00000000  // 0x00 //this is the default value!
 /* low noise mode= Highest current draw, low noise, full bandwith (1200Hz) 
  page 29: "The sensor is calibrated for mode_config = '00'. By changing to other modes, the offset is changed too, thus subsequently an offset correction has to be performed. */
-#define MODE_ULTRA_LOW_NOISE   B01  // 0x01 
+#define MODE_ULTRA_LOW_NOISE   B00000001  // 0x01 
 /* Ultra low noise mode - highest current, lowest noise, reduced bandwith (300Hz) */
-#define MODE_LPWR_LOW_NOISE    B10  // 0x02 
+#define MODE_LPWR_LOW_NOISE    B00000010  // 0x02 
 /* Low noise mode with reduced power: real bw = 1/2 set bandwith, output datarate 1200 -  */
-#define MODE_LOW_POWER         B11  // 0x03  
+#define MODE_LOW_POWER         B00000011  // 0x03  
 /* low power mode: real bw = 1/2 set bandwith, lowest power, 
 noise higher than in low noise modes, output data rate = 1200 samples/sec */
 /*  MODE  -- for 1, 1.5 and 2g
@@ -60,10 +62,9 @@ noise higher than in low noise modes, output data rate = 1200 samples/sec */
     0x01 Ultra Low Noise maxBW=472  Noise 150 ug/rt 
     0x02 Low Noise Low Power maxBW= 236  Samp/Sec =1200 Noise 200 ug/rt
     0X03 Low Power       maxBW=600                      Noise 200 ug/rt
-    Must see Page 28 section 7.7.3 for full info
-*/
+    see Page 28 section 7.7.3 for full info */
 
-/* the set of Data Register addresses to read out */
+/* the set of Data Register addresses */
 #define BMA180_CMD_CHIP_ID          0x00
 #define BMA180_CMD_VERSION          0x01
 #define BMA180_CMD_ACC_X_LSB        0x02  /* First of 6 registers of accel data */
@@ -100,11 +101,11 @@ The eeprom is only rated to 1000 write cycles so dont do this too often. NOTE ee
 allows writing to the "volatile" image registers and does not necessarily affect the eeprom data. */
 
 /* CTRL_REGISTER 0 BIT MASKS - the really important ones! see page 26 for defaults*/
-#define ctrl_reg0_dis_wake_up_MASK  B00000001  /* BIT(0) set to 1 and unit sleeps automatically for wake_up_dur (7.7.9) then takes readings, 
+#define ctrl_reg0_dis_wake_up_MASK  B00000001  /* set to 1 and unit sleeps automatically for wake_up_dur (7.7.9) then takes readings, 
 set this register bit to 0 to disable the automatic sleep&wake-up mode */ 
-#define ctrl_reg0_sleep_MASK        B00000010  /* BIT(1) chip will sleep if this bit set to 1 and wake when set to 0 
+#define ctrl_reg0_sleep_MASK        B00000010  /* chip will sleep if this bit set to 1 and wake when set to 0 
 Sleep bit should not be set to "1", when wake up mask is set to "1",  wait 10ms before any eeprom operation on wake from sleep*/
-#define ctrl_reg0_ee_w_MASK         B00010000  /* BIT(4) set this to 1 to Unlock writing to addr from 0x20 to 0x50, (default)=0 on reset
+#define ctrl_reg0_ee_w_MASK         B00010000  /* set this to 1 to Unlock writing to addr from 0x20 to 0x50, (default)=0 on reset
 7.10.3 ee_w  This bit must be written 1 to be able to write anything into image registers, resetting ee_w to 0 will prevent any register updates*/
 // No serial transaction should occur within minimum 10 us after soft_reset command
 
@@ -115,18 +116,15 @@ Sleep bit should not be set to "1", when wake up mask is set to "1",  wait 10ms 
 #define ctrl_reg0_reset_int_MASK    B01000000  /* if interrupts are latched, you need to write "1" to this bit to clear the latched interrupt */
 
 /* BMA180_CTRL_REG3 MASK */
-#define ctrl_reg3_new_data_int_MASK  0x01  /* BIT(1) Set to 1, for Intrupt to occur when new accel data is ready in all three channels */
+#define ctrl_reg3_new_data_int_MASK  B00000010  /* BIT(1) Set to 1, for Intrupt to occur when new accel data is ready in all three channels */
 
 
 // from http://www.geeetech.com/wiki/index.php/BMA180_Triple_Axis_Accelerometer_Breakout
 //BMA180 triple axis accelerometer sample code  www.geeetech.com//
 
-
-
 #define BMA180 0x40  //address of the accelerometer with SDO pulled up to VCC (0x41 if SDO pulled down to GND)
-//#define DATA 0x02  //start of 6 bits of x,y,z data /* First of 6 registers of accel data */
 
-#define filterSamples   7              // #samples for filtering should  be an odd number, no smaller than 3 - works great at 13 & good at 7-9 samples
+#define filterSamples   7             // #samples for filtering should  be an odd number, no smaller than 3 - works great at 13 & good at 7or9 samples
 int sensSmoothBMAx [filterSamples];   // array for holding raw sensor values for x 
 int sensSmoothBMAy [filterSamples];   // array for holding raw sensor values for y 
 int sensSmoothBMAz [filterSamples];   // array for holding raw sensor values for z 
@@ -135,28 +133,24 @@ int smoothBMAx;  // smoothed x data
 int smoothBMAy;  // smoothed y data
 int smoothBMAz;  // smoothed z data
 
-//byte BMAtemperature;
+//byte BMAtemperature; //not used
 
 // 3 color LED pin connections
 #define RED_PIN 3
 #define BLUE_PIN 5
 #define GREEN_PIN 4
 
-
 void setup() 
 { 
  Wire.begin();
  Serial.begin(9600); 
- pinMode(RED_PIN, OUTPUT);
- digitalWrite(RED_PIN, LOW);
- pinMode(GREEN_PIN, OUTPUT);
- digitalWrite(GREEN_PIN, LOW);
- pinMode(BLUE_PIN, OUTPUT);
- digitalWrite(BLUE_PIN, LOW);
+ pinMode(RED_PIN, OUTPUT);digitalWrite(RED_PIN, LOW);
+ pinMode(GREEN_PIN, OUTPUT);digitalWrite(GREEN_PIN, LOW);
+ pinMode(BLUE_PIN, OUTPUT);digitalWrite(BLUE_PIN, LOW);
  
  Serial.println("Initializing BMA180 accelerometer..."); 
  AccelerometerInit(); 
- Serial.println("...BMA180 has been initialized"); 
+ Serial.println("...BMA180 has been initialized");
 } 
 
 
@@ -166,14 +160,14 @@ void AccelerometerInit() {
   i2c_writeReg(BMA180,BMA180_CMD_RESET,0xB6);  //B6 (hex) forces the reset - pretty sure this can be done before the ee bit is set
   delay(10); //delay serial comms after reset  
   //Control, status & image registers are reset to values stored in the EEprom. 
-  //puts the BMA in wake-up mode & default low noise mode "00": BW=1200 Noise 150 ug/rt pg28
+  //puts the BMA in wake-up mode & default low noise mode "00", BW=1200
   
   Serial.print("Getting chip ID... ");  int id = i2c_readReg(BMA180, BMA180_CMD_CHIP_ID);
   
   if(id == 0x03)
   {
     Serial.print("BMA180 Chip found at: "); Serial.print(id); 
-    if (i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,1, ctrl_reg0_ee_w_MASK) == 0) //enable register writing
+    if (i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,1, ctrl_reg0_ee_w_MASK) == 0) //if you can enable register writing...
     {
       Serial.print("BMA180 Write Init Pass");
       
@@ -189,23 +183,23 @@ void AccelerometerInit() {
       i2c_writeRegBits(BMA180,BMA180_RANGEnSMP,BMA180_RANGE_1G,range_MASK);
       Serial.print("Range set to 1G");
 
-      // since this is a tilt sensing application, I am using the 1g range, which is factory calibrated
-      // To enable the factory calibrated offset registers to be used by the sensors DAC
-      // en_offset_x, en_offset_y, en_offset_z control bits are set to 1 
-      // p49: to regulate all axis, it is necessary to enable the en_offset bits sequentially
+      /* since this is a tilt sensing application, I am using the 1g range, which is factory calibrated
+         To enable the factory calibrated offset registers to be used by the sensors DAC
+         en_offset_x, en_offset_y, en_offset_z control bits are set to 1 
+         p49: to regulate all axis, it is necessary to enable the en_offset bits sequentially */
       
       i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG1,0,B10000000); //en_offset_x  not optional writing here!
       i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG1,0,B01000000); //en_offset_y
       i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG1,0,B00100000); //en_offset_z
       
-      // some people mention sample skipping can reduce noise? see p29
+      // some people mention sample skipping (see p29) can reduce noise?
       // usually use this with new_data_int=1 which occurs at the end of the Z-axis output register update
       // in low power mode, bw-5hz and interrupt is generated at 10hz with smpl skip on
       // i2c_writeOptionallyTo(BMA180,BMA180_RANGEnSMP,1,smp_skip_MASK);
       // Serial.print("Sample Skipping turned on");
   
-      //BMAtemperature = i2c_readReg(BMA180, BMA180_CMD_TEMP);
-      //Serial.print("Temperature =  ");Serial.println(BMAtemperature);
+      //  BMAtemperature = i2c_readReg(BMA180, BMA180_CMD_TEMP);
+      //  Serial.print("Temperature =  ");Serial.println(BMAtemperature);
 
       i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,0, ctrl_reg0_ee_w_MASK);//final step in setup is to disable register writing
   
@@ -329,6 +323,7 @@ int digitalSmooth(int *sensSmoothArray){
 
 /* writeOptionallyTo based on  http://www.centralnexus.com/seismograph/details_bma180.html
    Writes val to address register on device only if it's different from the current value, using the bitmask
+   Use this function of you write to the actual eeprom (40 or above), as it has a limitied 1000 write lifespan
  
 byte i2c_writeOptionallyTo(int DEVICE, byte address, byte val, byte mask) {
   byte result;  
