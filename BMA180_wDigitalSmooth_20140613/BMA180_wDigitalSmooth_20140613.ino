@@ -1,7 +1,7 @@
 // BMA180 I2C accelerometer script for tilt sensing in Cave Pearl Project
 // First working build for Raw 14 bit readings
 // 2012/06/11 by Edward Mallon
-// still needs to code for calibrating offsets
+// still needs code for calibrating offsets
 
 char foo;  //this is bogus code to fix a software bug in the compiler see: http://forum.arduino.cc/index.php?topic=84412.0
 
