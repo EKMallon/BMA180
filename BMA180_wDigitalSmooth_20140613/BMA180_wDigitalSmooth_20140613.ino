@@ -84,10 +84,9 @@ noise higher than in low noise modes, output data rate = 1200 samples/sec */
 /* Control Register set: these setup functional modes */
 #define BMA180_CMD_RESET            0x10 
 /* reset register: set to 0 for soft reset -all register values will reset*/
-/* EEprom  register values are copied to the "volatile" readable eeprom image registers after 
+/* EEprom default register values are copied to the "volatile" registers after 
 power on or soft reset. after every write command EEprom has to be reset by soft-reset.
-EEprom  register values are copied to the "volatile" readable eeprom image registers after 
-power on or soft reset. after every write command EEprom has to be reset by soft-reset. */
+No serial transaction should occur within minimum 10 us after soft_reset command */
 
 #define BMA180_CMD_CTRL_REG0        0x0D // EE_W enable write control is bit 4 of this register address!
 #define BMA180_CMD_CTRL_REG1        0x0E // contains the offsets for x, y,z
@@ -95,10 +94,10 @@ power on or soft reset. after every write command EEprom has to be reset by soft
 #define BMA180_CMD_CTRL_REG3        0x21 // configure different interrupt trigger bits in this register
 #define BMA180_CMD_CTRL_REG4        0x22 // low_hy, mot_cd_r, ff_cd_tr, offset_finetuning
 
-/* EEprom writing is an indirect procedure. Data is copied from from corresponding image registers are written 
-to EEPROM after sending write transaction to addresses 40h to 5FH (above all of our "normal" register traffic) 
-The eeprom is only rated to 1000 write cycles so dont do this too often. NOTE ee_w is mis-named as it really 
-allows writing to the "volatile" image registers and does not necessarily affect the eeprom data. */
+/* "permanent" EEprom writing is an indirect procedure. Data from corresponding volatile image registers are written 
+to EEPROM after sending write transaction to addresses 40h to 5FH (ie: above all of our "normal" register traffic) 
+The eeprom is only rated to 1000 write cycles so don't do this too often. NOTE ee_w is mis-named as it really 
+allows writing to the "volatile" image registers, and does not necessarily affect the eeprom data unless you write to 40h or above */
 
 /* CTRL_REGISTER 0 BIT MASKS - the really important ones! see page 26 for defaults*/
 #define ctrl_reg0_dis_wake_up_MASK  B00000001  /* set to 1 and unit sleeps automatically for wake_up_dur (7.7.9) then takes readings, 
@@ -107,7 +106,6 @@ set this register bit to 0 to disable the automatic sleep&wake-up mode */
 Sleep bit should not be set to "1", when wake up mask is set to "1",  wait 10ms before any eeprom operation on wake from sleep*/
 #define ctrl_reg0_ee_w_MASK         B00010000  /* set this to 1 to Unlock writing to addr from 0x20 to 0x50, (default)=0 on reset
 7.10.3 ee_w  This bit must be written 1 to be able to write anything into image registers, resetting ee_w to 0 will prevent any register updates*/
-// No serial transaction should occur within minimum 10 us after soft_reset command
 
 /* CTRL_REG0 BIT MASKS - the ones I am not using */
 #define ctrl_reg0_st0_MASK          B00000100  /* self-test 0 (electrostatic) setting this bit to 1 starts the test */
@@ -118,9 +116,8 @@ Sleep bit should not be set to "1", when wake up mask is set to "1",  wait 10ms 
 /* BMA180_CTRL_REG3 MASK */
 #define ctrl_reg3_new_data_int_MASK  B00000010  /* BIT(1) Set to 1, for Intrupt to occur when new accel data is ready in all three channels */
 
-
-// from http://www.geeetech.com/wiki/index.php/BMA180_Triple_Axis_Accelerometer_Breakout
-//BMA180 triple axis accelerometer sample code  www.geeetech.com//
+/* as a starting point see BMA180 triple axis accelerometer sample code
+  from http://www.geeetech.com/wiki/index.php/BMA180_Triple_Axis_Accelerometer_Breakout */
 
 #define BMA180 0x40  //address of the accelerometer with SDO pulled up to VCC (0x41 if SDO pulled down to GND)
 
@@ -133,7 +130,7 @@ int smoothBMAx;  // smoothed x data
 int smoothBMAy;  // smoothed y data
 int smoothBMAz;  // smoothed z data
 
-//byte BMAtemperature; //not used
+//byte BMAtemperature; //not used here but availiable
 
 // 3 color LED pin connections
 #define RED_PIN 3
@@ -323,7 +320,7 @@ int digitalSmooth(int *sensSmoothArray){
 
 /* writeOptionallyTo based on  http://www.centralnexus.com/seismograph/details_bma180.html
    Writes val to address register on device only if it's different from the current value, using the bitmask
-   Use this function of you write to the actual eeprom (40 or above), as it has a limitied 1000 write lifespan
+   Use this function of you write to the "permanent" eeprom (40 or above), as it has a limitied 1000 write lifespan
  
 byte i2c_writeOptionallyTo(int DEVICE, byte address, byte val, byte mask) {
   byte result;  
