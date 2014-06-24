@@ -8,14 +8,14 @@ char foo;  //this is bogus code to fix a software bug in the compiler see: http:
 #include <Wire.h> 
 
 /* BMA180 default values:  see page 26 of datasheet
-  DEF_PMODE =0, DEF_SCALE =250,  bandwidth default =20 HZ */
+ DEF_PMODE =0, DEF_SCALE =250,  bandwidth default =20 HZ */
 
 #define BMA180_CMD_BW_TCS  0x20 
 //bits 4-7 of this register are the filtering bandwidth bits, 0-3 are the temp compensation bits (page 46)
 /* the output data rate of the sensor is always set at 1200 samples/second, but this then gets filtered through the BW setting (p28)
-  note that the bandwith is ~ 1/2 of these numbers in the two power save modes
-  and values to load into the left most 4 bits (with <<4 shifting) of that register are: */
-  
+ note that the bandwith is ~ 1/2 of these numbers in the two power save modes
+ and values to load into the left most 4 bits (with <<4 shifting) of that register are: */
+
 #define cmd_bandwidth_MASK B11110000
 #define BMA180_BW_10HZ     0x00  //to filter down to 10hz, the sensor reads 253 samples, so it takes quite a while!
 #define BMA180_BW_20HZ     0x01
@@ -56,13 +56,13 @@ char foo;  //this is bogus code to fix a software bug in the compiler see: http:
 /* Low noise mode with reduced power: real bw = 1/2 set bandwith, output datarate 1200 -  */
 #define MODE_LOW_POWER         B00000011  // 0x03  
 /* low power mode: real bw = 1/2 set bandwith, lowest power, 
-noise higher than in low noise modes, output data rate = 1200 samples/sec */
+ noise higher than in low noise modes, output data rate = 1200 samples/sec */
 /*  MODE  -- for 1, 1.5 and 2g
-    0x00=LowNoise,       maxBW=1200 Noise 150 ug/rt
-    0x01 Ultra Low Noise maxBW=472  Noise 150 ug/rt 
-    0x02 Low Noise Low Power maxBW= 236  Samp/Sec =1200 Noise 200 ug/rt
-    0X03 Low Power       maxBW=600                      Noise 200 ug/rt
-    see Page 28 section 7.7.3 for full info */
+ 0x00=LowNoise,       maxBW=1200 Noise 150 ug/rt
+ 0x01 Ultra Low Noise maxBW=472  Noise 150 ug/rt 
+ 0x02 Low Noise Low Power maxBW= 236  Samp/Sec =1200 Noise 200 ug/rt
+ 0X03 Low Power       maxBW=600                      Noise 200 ug/rt
+ see Page 28 section 7.7.3 for full info */
 
 /* the set of Data Register addresses */
 #define BMA180_CMD_CHIP_ID          0x00
@@ -85,8 +85,8 @@ noise higher than in low noise modes, output data rate = 1200 samples/sec */
 #define BMA180_CMD_RESET            0x10 
 /* reset register: set to 0 for soft reset -all register values will reset*/
 /* EEprom default register values are copied to the "volatile" registers after 
-power on or soft reset. after every write command EEprom has to be reset by soft-reset.
-No serial transaction should occur within minimum 10 us after soft_reset command */
+ power on or soft reset. after every write command EEprom has to be reset by soft-reset.
+ No serial transaction should occur within minimum 10 us after soft_reset command */
 
 #define BMA180_CMD_CTRL_REG0        0x0D // EE_W enable write control is bit 4 of this register address!
 #define BMA180_CMD_CTRL_REG1        0x0E // contains the offsets for x, y,z
@@ -95,9 +95,9 @@ No serial transaction should occur within minimum 10 us after soft_reset command
 #define BMA180_CMD_CTRL_REG4        0x22 // low_hy, mot_cd_r, ff_cd_tr, offset_finetuning
 
 /* "permanent" EEprom writing is an indirect procedure. Data from corresponding volatile image registers are written 
-to EEPROM after sending write transaction to addresses 40h to 5FH (ie: above all of our "normal" register traffic) 
-The eeprom is only rated to 1000 write cycles so don't do this too often. NOTE ee_w is mis-named as it really 
-allows writing to the "volatile" image registers, and does not necessarily affect the eeprom data unless you write to 40h or above */
+ to EEPROM after sending write transaction to addresses 40h to 5FH (ie: above all of our "normal" register traffic) 
+ The eeprom is only rated to 1000 write cycles so don't do this too often. NOTE ee_w is mis-named as it really 
+ allows writing to the "volatile" image registers, and does not necessarily affect the eeprom data unless you write to 40h or above */
 
 /* CTRL_REGISTER 0 BIT MASKS - the really important ones! see page 26 for defaults*/
 #define ctrl_reg0_dis_wake_up_MASK  B00000001  /* set to 1 and unit sleeps automatically for wake_up_dur (7.7.9) then takes readings, 
@@ -117,7 +117,7 @@ Sleep bit should not be set to "1", when wake up mask is set to "1",  wait 10ms 
 #define ctrl_reg3_new_data_int_MASK  B00000010  /* BIT(1) Set to 1, for Intrupt to occur when new accel data is ready in all three channels */
 
 /* as a starting point see BMA180 triple axis accelerometer sample code
-  from http://www.geeetech.com/wiki/index.php/BMA180_Triple_Axis_Accelerometer_Breakout */
+ from http://www.geeetech.com/wiki/index.php/BMA180_Triple_Axis_Accelerometer_Breakout */
 
 #define BMA180 0x40  //address of the accelerometer with SDO pulled up to VCC (0x41 if SDO pulled down to GND)
 
@@ -139,15 +139,18 @@ int smoothBMAz;  // smoothed z data
 
 void setup() 
 { 
- Wire.begin();
- Serial.begin(9600); 
- pinMode(RED_PIN, OUTPUT);digitalWrite(RED_PIN, LOW);
- pinMode(GREEN_PIN, OUTPUT);digitalWrite(GREEN_PIN, LOW);
- pinMode(BLUE_PIN, OUTPUT);digitalWrite(BLUE_PIN, LOW);
- 
- Serial.println("Initializing BMA180 accelerometer..."); 
- AccelerometerInit(); 
- Serial.println("...BMA180 has been initialized");
+  Wire.begin();
+  Serial.begin(9600); 
+  pinMode(RED_PIN, OUTPUT);
+  digitalWrite(RED_PIN, LOW);
+  pinMode(GREEN_PIN, OUTPUT);
+  digitalWrite(GREEN_PIN, LOW);
+  pinMode(BLUE_PIN, OUTPUT);
+  digitalWrite(BLUE_PIN, LOW);
+
+  Serial.println("Initializing BMA180 accelerometer..."); 
+  AccelerometerInit(); 
+  Serial.println("...BMA180 has been initialized");
 } 
 
 
@@ -158,119 +161,141 @@ void AccelerometerInit() {
   delay(10); //delay serial comms after reset  
   //Control, status & image registers are reset to values stored in the EEprom. 
   //puts the BMA in wake-up mode & default low noise mode "00", BW=1200
-  
-  Serial.print("Getting chip ID... ");  int id = i2c_readReg(BMA180, BMA180_CMD_CHIP_ID);
-  
+
+    Serial.print("Getting chip ID... ");  
+  int id = i2c_readReg(BMA180, BMA180_CMD_CHIP_ID);
+
   if(id == 0x03)
   {
-    Serial.print("BMA180 Chip found at: "); Serial.print(id); 
+    Serial.print("BMA180 Chip found at: "); 
+    Serial.print(id); 
     if (i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,1, ctrl_reg0_ee_w_MASK) == 0) //if you can enable register writing...
     {
       Serial.print("BMA180 Write Init Pass");
-      
+
       // disable wakeup mode because we will be sleeping the sensor manually
       i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,0, ctrl_reg0_dis_wake_up_MASK);  
       Serial.print("Wake up mode disabled, ");
-    
+
       // Connect to the bw_tcs register and set the BW filtering level to 10Hz, Only bits 4-7 of the register hold this data
       i2c_writeRegBits(BMA180,BMA180_CMD_BW_TCS,BMA180_BW_10HZ,cmd_bandwidth_MASK);
       Serial.print("Filtering level set to 10HZ, ");
-  
+
       // Connect to the offset_lsb1 register and set the range
       i2c_writeRegBits(BMA180,BMA180_RANGEnSMP,BMA180_RANGE_1G,range_MASK);
       Serial.print("Range set to 1G");
 
       /* since this is a tilt sensing application, I am using the 1g range, which is factory calibrated
-         To enable the factory calibrated offset registers to be used by the sensors DAC
-         en_offset_x, en_offset_y, en_offset_z control bits are set to 1 
-         p49: to regulate all axis, it is necessary to enable the en_offset bits sequentially */
-      
+       To enable the factory calibrated offset registers to be used by the sensors DAC
+       en_offset_x, en_offset_y, en_offset_z control bits are set to 1 
+       p49: to regulate all axis, it is necessary to enable the en_offset bits sequentially */
+
       i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG1,0,B10000000); //en_offset_x  not optional writing here!
       i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG1,0,B01000000); //en_offset_y
       i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG1,0,B00100000); //en_offset_z
-      
+
       // some people mention sample skipping (see p29) can reduce noise?
       // usually use this with new_data_int=1 which occurs at the end of the Z-axis output register update
       // in low power mode, bw-5hz and interrupt is generated at 10hz with smpl skip on
       // i2c_writeOptionallyTo(BMA180,BMA180_RANGEnSMP,1,smp_skip_MASK);
       // Serial.print("Sample Skipping turned on");
-  
+
       //  BMAtemperature = i2c_readReg(BMA180, BMA180_CMD_TEMP);
       //  Serial.print("Temperature =  ");Serial.println(BMAtemperature);
 
       i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,0, ctrl_reg0_ee_w_MASK);//final step in setup is to disable register writing
-  
+
     }
     else
-    {  Serial.print("BMA180 Write Init Fail"); digitalWrite(RED_PIN, HIGH);
-    }}
+    {  
+      Serial.print("BMA180 Write Init Fail"); 
+      digitalWrite(RED_PIN, HIGH);
+    }
+  }
   else
   {
-  Serial.print("BMA180 Chip Detect Fail"); digitalWrite(RED_PIN, HIGH);
+    Serial.print("BMA180 Chip Detect Fail"); 
+    digitalWrite(RED_PIN, HIGH);
   }
-    
-    AccelerometerRead();  //just to get the sensor arrays loaded
+
+  AccelerometerRead();  //just to get the sensor arrays loaded
 }
 //
 void loop() 
 { 
- digitalWrite(GREEN_PIN, HIGH);;delay(1);digitalWrite(GREEN_PIN, LOW);
- AccelerometerRead(); 
- 
- Serial.print("x="); Serial.print(smoothBMAx);
- Serial.print(",y="); Serial.print(smoothBMAy);
- Serial.print(",z="); Serial.print(smoothBMAz);
- 
- digitalWrite(GREEN_PIN, HIGH);;delay(1);digitalWrite(GREEN_PIN, LOW);
- delay(10);
- // now put BMA189 TO SLEEP
- i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,1, ctrl_reg0_sleep_MASK); //sleeps sensor if this bit set to 1
- Serial.print("         Sleep for 1.5 sec.."); 
- digitalWrite(BLUE_PIN, HIGH);delay(1);digitalWrite(BLUE_PIN, LOW);
- delay(1500); // sleep for a while 
- i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,0, ctrl_reg0_sleep_MASK);//and wakes when set to 0 
- digitalWrite(BLUE_PIN, HIGH);delay(1);digitalWrite(BLUE_PIN, LOW);
- 
- delay(100); // give some time for bma180 axis registers to fill again after waking
+  digitalWrite(GREEN_PIN, HIGH);
+  ;
+  delay(1);
+  digitalWrite(GREEN_PIN, LOW);
+  AccelerometerRead(); 
+
+  Serial.print("x="); 
+  Serial.print(smoothBMAx);
+  Serial.print(",y="); 
+  Serial.print(smoothBMAy);
+  Serial.print(",z="); 
+  Serial.print(smoothBMAz);
+
+  digitalWrite(GREEN_PIN, HIGH);
+  ;
+  delay(1);
+  digitalWrite(GREEN_PIN, LOW);
+  delay(10);
+  // now put BMA189 TO SLEEP
+  i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,1, ctrl_reg0_sleep_MASK); //sleeps sensor if this bit set to 1
+  Serial.print("         Sleep for 1.5 sec.."); 
+  digitalWrite(BLUE_PIN, HIGH);
+  delay(1);
+  digitalWrite(BLUE_PIN, LOW);
+  delay(1500); // sleep for a while 
+  i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,0, ctrl_reg0_sleep_MASK);//and wakes when set to 0 
+  digitalWrite(BLUE_PIN, HIGH);
+  delay(1);
+  digitalWrite(BLUE_PIN, LOW);
+
+  delay(100); // give some time for bma180 axis registers to fill again after waking
 }
 
 //---------------- Functions--------------------
 
 void AccelerometerRead() 
 { 
-// read in the 3 axis data, each one is 14 bits = +- 16,383 for integer values
-// note negative values in the directions of the arrows printed on the breakout board!
+  // read in the 3 axis data, each one is 14 bits = +- 16,383 for integer values
+  // note negative values in the directions of the arrows printed on the breakout board!
 
   byte temp =0;
   int data = 0;
   for (int thisReading = 0; thisReading < filterSamples; thisReading++){  //fill the smoothing arrays
 
-  //note negative values in the directions of the arrows printed on my breakout board!
-  
-  temp = i2c_readReg(BMA180, BMA180_CMD_ACC_X_MSB);
-  data = temp << 8; // puts the most sig bits on the corect side - I am reading 14 bits total
-  temp = i2c_readReg(BMA180, BMA180_CMD_ACC_X_LSB); 
-  data |= temp >> 2; //this shift gets rid of two non-value bits in LSB register
-  sensSmoothBMAx[thisReading]=data;data = 0;
- 
-  temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Y_MSB);
-  data = temp << 8;
-  temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Y_LSB);
-  data |= temp >> 2; // what about adding the offset here?
-  sensSmoothBMAy[thisReading]=data;data = 0;
-  
-  temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Z_MSB);
-  data = temp << 8;
-  temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Z_LSB);
-  data |= temp >> 2;
-  sensSmoothBMAz[thisReading]=data;data = 0; 
- 
-  delay(110); // we have the internal BMA bandwith filter set to 10 Hz so its not going to give new data without some time!
- }
- // Now send those readings out to the digital smoothing function
-smoothBMAx = digitalSmooth(sensSmoothBMAx);
-smoothBMAy = digitalSmooth(sensSmoothBMAy);
-smoothBMAz = digitalSmooth(sensSmoothBMAz);
+    //note negative values in the directions of the arrows printed on my breakout board!
+
+    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_X_MSB);
+    data = temp << 8; // puts the most sig bits on the corect side - I am reading 14 bits total
+    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_X_LSB); 
+    data |= temp >> 2; //this shift gets rid of two non-value bits in LSB register
+    sensSmoothBMAx[thisReading]=data;
+    data = 0;
+
+    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Y_MSB);
+    data = temp << 8;
+    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Y_LSB);
+    data |= temp >> 2; // what about adding the offset here?
+    sensSmoothBMAy[thisReading]=data;
+    data = 0;
+
+    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Z_MSB);
+    data = temp << 8;
+    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Z_LSB);
+    data |= temp >> 2;
+    sensSmoothBMAz[thisReading]=data;
+    data = 0; 
+
+    delay(110); // we have the internal BMA bandwith filter set to 10 Hz so its not going to give new data without some time!
+  }
+  // Now send those readings out to the digital smoothing function
+  smoothBMAx = digitalSmooth(sensSmoothBMAx);
+  smoothBMAy = digitalSmooth(sensSmoothBMAy);
+  smoothBMAz = digitalSmooth(sensSmoothBMAz);
 }
 
 
@@ -294,14 +319,14 @@ int digitalSmooth(int *sensSmoothArray){
       }
     }
   }
-  
-/*  Serial.println();
-  for (j = 0; j < (filterSamples); j++){    // print the array for debugging
-    Serial.print(sensSmoothArray[j]); 
-    Serial.print("   "); 
- }
- Serial.println();
-*/
+
+  /*  Serial.println();
+   for (j = 0; j < (filterSamples); j++){    // print the array for debugging
+   Serial.print(sensSmoothArray[j]); 
+   Serial.print("   "); 
+   }
+   Serial.println();
+   */
 
   // throw out top and bottom 15% of samples - limit to throw out at least one from top and bottom
   bottom = max(((filterSamples * 15)  / 100), 1); 
@@ -315,25 +340,25 @@ int digitalSmooth(int *sensSmoothArray){
   }
   //  Serial.println(); Serial.print("average = "); Serial.println(total/k); //more debugging
   return total/k;    // divide by number of samples
-  
+
 }
 
 /* writeOptionallyTo based on  http://www.centralnexus.com/seismograph/details_bma180.html
-   Writes val to address register on device only if it's different from the current value, using the bitmask
-   Use this function of you write to the "permanent" eeprom (40 or above), as it has a limitied 1000 write lifespan
+ Writes val to address register on device only if it's different from the current value, using the bitmask
+ Use this function of you write to the "permanent" eeprom (40 or above), as it has a limitied 1000 write lifespan
  
-byte i2c_writeOptionallyTo(int DEVICE, byte address, byte val, byte mask) {
-  byte result;  
-  byte value = 0;
-  value = i2c_readReg(DEVICE, address);
-  if ((value & mask) != (val & mask)) {  //if read in bit (selected by the mask) is "Not equal to" passed in val for the bit 
-    //Keep the unmasked values, and changed the masked value to the new one 
-  result = i2c_writeReg(DEVICE, address, (value & ~mask) | (val & mask));    //the squiggle is a bitwise NOT operator and pipe is bitwise OR
-  }
-  return result;
-  }  
-*/
- 
+ byte i2c_writeOptionallyTo(int DEVICE, byte address, byte val, byte mask) {
+ byte result;  
+ byte value = 0;
+ value = i2c_readReg(DEVICE, address);
+ if ((value & mask) != (val & mask)) {  //if read in bit (selected by the mask) is "Not equal to" passed in val for the bit 
+ //Keep the unmasked values, and changed the masked value to the new one 
+ result = i2c_writeReg(DEVICE, address, (value & ~mask) | (val & mask));    //the squiggle is a bitwise NOT operator and pipe is bitwise OR
+ }
+ return result;
+ }  
+ */
+
 /* Writes val to address register bits on device using the bitmask */
 byte i2c_writeRegBits(int DEVICE, byte address, byte val, byte mask) {
   byte result;  
@@ -341,33 +366,33 @@ byte i2c_writeRegBits(int DEVICE, byte address, byte val, byte mask) {
   value = i2c_readReg(DEVICE, address);
   result = i2c_writeReg(DEVICE, address, (value & ~mask) | (val & mask));  
   return result;
-  }
- 
+}
+
 // ReadReg & WriteReg FUNCTIONS  
 // based on https://github.com/makerbot/BMA180-Datalogger/blob/master/bma180-datalogger-shield/bma180-logger/bma180.ino
- 
+
 byte i2c_readReg(int dev_i2c_address, byte reg_address)  //MUST be interger for the i2c address
 {
   byte temp;
-  
+
   Wire.beginTransmission(dev_i2c_address);
   Wire.write(reg_address);
   Wire.endTransmission();        //end transmission
- 
-  Wire.beginTransmission(dev_i2c_address); //start transmission to ACC
+
+    Wire.beginTransmission(dev_i2c_address); //start transmission to ACC
   Wire.requestFrom(dev_i2c_address, 1);
   while(Wire.available())
   {
     temp = Wire.read();
   }
-  
+
   return temp;
 }
 
 byte i2c_writeReg(int dev_i2c_address, byte reg_address, byte data)  // used in the i2c_writeOptionallyTo function
 {
   byte result;
-  
+
   Wire.beginTransmission(dev_i2c_address);
   Wire.write(reg_address);
   Wire.write(data);
@@ -377,7 +402,8 @@ byte i2c_writeReg(int dev_i2c_address, byte reg_address, byte data)  // used in 
   if(result > 0)
   {
     Serial.print("PROBLEM..... Result code is ");
-    Serial.println(result); digitalWrite(RED_PIN, HIGH);
+    Serial.println(result); 
+    digitalWrite(RED_PIN, HIGH);
   }
   else
   {
@@ -387,3 +413,4 @@ byte i2c_writeReg(int dev_i2c_address, byte reg_address, byte data)  // used in 
 
   return result;
 } 
+
