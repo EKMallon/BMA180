@@ -162,7 +162,7 @@ void AccelerometerInit() {
   //Control, status & image registers are reset to values stored in the EEprom. 
   //puts the BMA in wake-up mode & default low noise mode "00", BW=1200
 
-    Serial.print("Getting chip ID... ");  
+  Serial.print("Getting chip ID... ");  
   int id = i2c_readReg(BMA180, BMA180_CMD_CHIP_ID);
 
   if(id == 0x03)
@@ -264,28 +264,33 @@ void AccelerometerRead()
   // note negative values in the directions of the arrows printed on the breakout board!
 
   int16_t data = 0;
+  byte buffer[9];
+  
   for (int thisReading = 0; thisReading < filterSamples; thisReading++){  //fill the smoothing arrays
-
+    
+    int16_t nRead = i2c_readRegs(BMA180, BMA180_CMD_CHIP_ID, 9, buffer);
+    if (nRead != 9) {
+      Serial.println(" Wrong number of data returned");
+    }
     //note negative values in the directions of the arrows printed on my breakout board!
 
-    data = i2c_readReg(BMA180, BMA180_CMD_ACC_X_MSB);
+    data = buffer[BMA180, BMA180_CMD_ACC_X_MSB];
     data = data << 8; // puts the most sig bits on the corect side - I am reading 14 bits total
-    data |= i2c_readReg(BMA180, BMA180_CMD_ACC_X_LSB);
+    data |= buffer[BMA180, BMA180_CMD_ACC_X_LSB];
     data = data >> 2; //this shift gets rid of two non-value bits in LSB register
     sensSmoothBMAx[thisReading]=data;
 
-    data = i2c_readReg(BMA180, BMA180_CMD_ACC_Y_MSB);
+    data = buffer[BMA180, BMA180_CMD_ACC_Y_MSB];
     data = data << 8;
-    data |= i2c_readReg(BMA180, BMA180_CMD_ACC_Y_LSB);
+    data |= buffer[BMA180, BMA180_CMD_ACC_Y_LSB];
     data = data >> 2; // what about adding the offset here?
     sensSmoothBMAy[thisReading]=data;
 
-    data = i2c_readReg(BMA180, BMA180_CMD_ACC_Z_MSB);
+    data = buffer[BMA180, BMA180_CMD_ACC_Z_MSB];
     data = data << 8;
-    data |= i2c_readReg(BMA180, BMA180_CMD_ACC_Z_LSB);
+    data |= buffer[BMA180, BMA180_CMD_ACC_Z_LSB];
     data = data >> 2;
     sensSmoothBMAz[thisReading]=data;
-    data = 0; 
 
     delay(110); // we have the internal BMA bandwith filter set to 10 Hz so its not going to give new data without some time!
   }
@@ -376,7 +381,7 @@ byte i2c_readReg(int dev_i2c_address, byte reg_address)  //MUST be interger for 
   Wire.write(reg_address);
   Wire.endTransmission();        //end transmission
 
-    Wire.beginTransmission(dev_i2c_address); //start transmission to ACC
+  Wire.beginTransmission(dev_i2c_address); //start transmission to ACC
   Wire.requestFrom(dev_i2c_address, 1);
   while(Wire.available())
   {
@@ -384,6 +389,27 @@ byte i2c_readReg(int dev_i2c_address, byte reg_address)  //MUST be interger for 
   }
 
   return temp;
+}
+
+// ReadReg & WriteReg FUNCTIONS  
+// based on https://github.com/makerbot/BMA180-Datalogger/blob/master/bma180-datalogger-shield/bma180-logger/bma180.ino
+
+uint16_t i2c_readRegs(int dev_i2c_address, byte reg_address, uint16_t num, byte *buffer)  //MUST be interger for the i2c address
+{
+  uint16_t i = 0;
+
+  Wire.beginTransmission(dev_i2c_address);
+  Wire.write(reg_address);
+  Wire.endTransmission();        //end transmission
+
+  Wire.beginTransmission(dev_i2c_address); //start transmission to ACC
+  Wire.requestFrom(dev_i2c_address, num);
+  for (i=0; Wire.available(); i++)
+  {
+    buffer[i] = Wire.read();
+  }
+
+  return i;
 }
 
 byte i2c_writeReg(int dev_i2c_address, byte reg_address, byte data)  // used in the i2c_writeOptionallyTo function
