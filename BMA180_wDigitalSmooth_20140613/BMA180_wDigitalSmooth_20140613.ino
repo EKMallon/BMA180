@@ -263,30 +263,27 @@ void AccelerometerRead()
   // read in the 3 axis data, each one is 14 bits = +- 16,383 for integer values
   // note negative values in the directions of the arrows printed on the breakout board!
 
-  byte temp =0;
-  int data = 0;
+  int16_t data = 0;
   for (int thisReading = 0; thisReading < filterSamples; thisReading++){  //fill the smoothing arrays
 
     //note negative values in the directions of the arrows printed on my breakout board!
 
-    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_X_MSB);
-    data = temp << 8; // puts the most sig bits on the corect side - I am reading 14 bits total
-    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_X_LSB); 
-    data |= temp >> 2; //this shift gets rid of two non-value bits in LSB register
+    data = i2c_readReg(BMA180, BMA180_CMD_ACC_X_MSB);
+    data = data << 8; // puts the most sig bits on the corect side - I am reading 14 bits total
+    data |= i2c_readReg(BMA180, BMA180_CMD_ACC_X_LSB);
+    data = data >> 2; //this shift gets rid of two non-value bits in LSB register
     sensSmoothBMAx[thisReading]=data;
-    data = 0;
 
-    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Y_MSB);
-    data = temp << 8;
-    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Y_LSB);
-    data |= temp >> 2; // what about adding the offset here?
+    data = i2c_readReg(BMA180, BMA180_CMD_ACC_Y_MSB);
+    data = data << 8;
+    data |= i2c_readReg(BMA180, BMA180_CMD_ACC_Y_LSB);
+    data = data >> 2; // what about adding the offset here?
     sensSmoothBMAy[thisReading]=data;
-    data = 0;
 
-    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Z_MSB);
-    data = temp << 8;
-    temp = i2c_readReg(BMA180, BMA180_CMD_ACC_Z_LSB);
-    data |= temp >> 2;
+    data = i2c_readReg(BMA180, BMA180_CMD_ACC_Z_MSB);
+    data = data << 8;
+    data |= i2c_readReg(BMA180, BMA180_CMD_ACC_Z_LSB);
+    data = data >> 2;
     sensSmoothBMAz[thisReading]=data;
     data = 0; 
 
