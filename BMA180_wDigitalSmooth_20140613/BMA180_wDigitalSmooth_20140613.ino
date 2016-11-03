@@ -174,16 +174,16 @@ void AccelerometerInit() {
       Serial.print("BMA180 Write Init Pass");
 
       // disable wakeup mode because we will be sleeping the sensor manually
-      i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,0, ctrl_reg0_dis_wake_up_MASK);  
-      Serial.print("Wake up mode disabled, ");
+      if (i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,0, ctrl_reg0_dis_wake_up_MASK) == 0);  
+      {Serial.print("Wake up mode disabled, ");}
 
       // Connect to the bw_tcs register and set the BW filtering level to 10Hz, Only bits 4-7 of the register hold this data
-      i2c_writeRegBits(BMA180,BMA180_CMD_BW_TCS,BMA180_BW_10HZ,cmd_bandwidth_MASK);
-      Serial.print("Filtering level set to 10HZ, ");
+      if (i2c_writeRegBits(BMA180,BMA180_CMD_BW_TCS,BMA180_BW_10HZ,cmd_bandwidth_MASK) == 0);
+      {Serial.print("Filtering level set to 10HZ, ");}
 
       // Connect to the offset_lsb1 register and set the range
-      i2c_writeRegBits(BMA180,BMA180_RANGEnSMP,BMA180_RANGE_1G,range_MASK);
-      Serial.print("Range set to 1G");
+      if (i2c_writeRegBits(BMA180,BMA180_RANGEnSMP,BMA180_RANGE_1G,range_MASK) == 0);
+      {Serial.print("Range set to 1G");}
 
       /* since this is a tilt sensing application, I am using the 1g range, which is factory calibrated
        To enable the factory calibrated offset registers to be used by the sensors DAC
@@ -242,13 +242,14 @@ void loop()
   digitalWrite(GREEN_PIN, LOW);
   delay(10);
   // now put BMA189 TO SLEEP
-  i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,1, ctrl_reg0_sleep_MASK); //sleeps sensor if this bit set to 1
-  Serial.print("         Sleep for 1.5 sec.."); 
+  if (i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,1, ctrl_reg0_sleep_MASK) == 0); //sleeps sensor if this bit set to 1
+  {Serial.print("         Sleep for 5 sec.."); }
   digitalWrite(BLUE_PIN, HIGH);
   delay(1);
   digitalWrite(BLUE_PIN, LOW);
-  delay(1500); // sleep for a while 
-  i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,0, ctrl_reg0_sleep_MASK);//and wakes when set to 0 
+  delay(5000); // sleep for a while 
+  if (i2c_writeRegBits(BMA180,BMA180_CMD_CTRL_REG0,0, ctrl_reg0_sleep_MASK) == 0);//and wakes when set to 0 
+  {Serial.print("         Wake up.."); }
   digitalWrite(BLUE_PIN, HIGH);
   delay(1);
   digitalWrite(BLUE_PIN, LOW);
